@@ -1,0 +1,144 @@
+#!/bin/bash
+
+MAX_HEAP_SIZE=${MAX_HEAP_SIZE:-"-Xmx1G"}
+MIN_HEAP_SIZE=${MIN_HEAP_SIZE:-"$MAX_HEAP_SIZE"}
+
+MINECRAFT_HOME="/opt/minecraft"
+MINECRAFT_VERSION=${MINERAFT_VERSION:-1.15}
+MINECRAFT_JAR="paper.jar"
+MINECRAFT_OPTS=${MINECRAFT_OPTS:-"$MIN_HEAP_SIZE $MAX_HEAP_SIZE -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:MaxGCPauseMillis=100 -XX:+DisableExplicitGC -XX:TargetSurvivorRatio=90 -XX:G1NewSizePercent=50 -XX:G1MaxNewSizePercent=80 -XX:G1MixedGCLiveThresholdPercent=35 -XX:+AlwaysPreTouch -XX:+ParallelRefProcEnabled -Dusing.aikars.flags=mcflags.emc.gs"}
+WORLD_DIR="/var/lib/minecraft"
+
+PAPER_DOWNLOAD_URL=${PAPER_DOWNLOAD_URL:-"https://papermc.io/api/v1/paper/$MINECRAFT_VERSION/latest/download"}
+TMUX_SESSION=minecraft
+
+accept_eula() {
+    # Agree to EULA.
+    if [ "$MINECRAFT_EULA" == "true" ]; then
+        echo "Updating $MINECRAFT_HOME/eula.txt"
+        echo "eula=$MINECRAFT_EULA" > $MINECRAFT_HOME/eula.txt
+    else
+        >&2 echo "Mojang requires you to accept their EULA. You need to set the MINECRAFT_EULA variable to true."
+        exit 1
+    fi
+}
+
+download_papermc() {
+    if [ ! -f "$MINECRAFT_HOME/$MINECRAFT_JAR" ]; then
+        accept_eula
+
+        echo "Downloading Paper MC"  && \
+            curl -S $PAPER_DOWNLOAD_URL -o $MINECRAFT_HOME/$MINECRAFT_JAR 
+
+        if [ $? -ne 0 ]; then
+            >&2 echo "Unable to build Spigot."
+            exit 1
+        fi
+
+        configure_server
+    fi
+}
+
+update_permissions() {
+    echo "Updating file permissions"
+    chown -R minecraft:minecraft $MINECRAFT_HOME $WORLD_DIR
+}
+
+configure_server() {
+    # Create the server.properties if it doesn't exist
+    if [ ! -f "$MINECRAFT_HOME/server.properties" ]; then
+        echo "Creating $MINECRAFT_HOME/server.properties"
+        echo "motd=${MOTD}" >> $MINECRAFT_HOME/server.properties
+        echo "level-name=${LEVEL_NAME:-world}" >> $MINECRAFT_HOME/server.properties
+        echo "enable-query=${ENABLE_QUERY:-false}" >> $MINECRAFT_HOME/server.properties
+        echo "allow-flight=${ALLOW_FLIGHT:-false}" >> $MINECRAFT_HOME/server.properties
+        echo "announce-player-achievements=${ANNOUNCE_PLAYER_ACHIEVEMENTS:-true}" >> $MINECRAFT_HOME/server.properties
+        echo "server-port=25565" >> $MINECRAFT_HOME/server.properties
+        echo "level-type=${LEVEL_TYPE:-DEFAULT}" >> $MINECRAFT_HOME/server.properties
+        echo "enable-rcon=${ENABLE_RCON:-false}" >> $MINECRAFT_HOME/server.properties
+        echo "force-gamemode=${FORCE_GAMEMODE:-false}" >> $MINECRAFT_HOME/server.properties
+        echo "level-seed=$LEVEL_SEED" >> $MINECRAFT_HOME/server.properties
+        echo "server-ip=$SERVER_IP" >> $MINECRAFT_HOME/server.properties
+        echo "max-build-height=${MAX_BUILD_HEIGHT:-256}" >> $MINECRAFT_HOME/server.properties
+        echo "spawn-npcs=${SPAWN_NPCS:-true}" >> $MINECRAFT_HOME/server.properties
+        echo "white-list=${WHITE_LIST:-true}" >> $MINECRAFT_HOME/server.properties
+        echo "spawn-animals=${SPAWN_ANIMALS:-true}" >> $MINECRAFT_HOME/server.properties
+        echo "snooper-enabled=${SNOOPER_ENABLED:-true}" >> $MINECRAFT_HOME/server.properties
+        echo "online-mode=${ONLINE_MODE:-true}" >> $MINECRAFT_HOME/server.properties
+        echo "pvp=${PVP:-true}" >> $MINECRAFT_HOME/server.properties
+        echo "difficulty=${DIFFICULTY:-2}" >> $MINECRAFT_HOME/server.properties
+        echo "enable-command-block=${ENABLE_COMMAND_BLOCK:-true}" >> $MINECRAFT_HOME/server.properties
+        echo "player-idle-timeout=${PLAYER_IDLE_TIMEOUT:-0}" >> $MINECRAFT_HOME/server.properties
+        echo "gamemode=${GAMEMODE:-0}" >> $MINECRAFT_HOME/server.properties
+        echo "max-players=${MAX_PLAYERS:-10}" >> $MINECRAFT_HOME/server.properties
+        echo "spawn-monsters=${SPAWN_MONSTERS:-true}" >> $MINECRAFT_HOME/server.properties
+        echo "view-distance=${VIEW_DISTANCE:-10}" >> $MINECRAFT_HOME/server.properties
+        echo "generate-structures=${GENERATE_STRUCTURES:-true}" >> $MINECRAFT_HOME/server.properties
+        echo "use-native-transport=${USE_NATIVE_TRANSPORT:-true}" >> $MINECRAFT_HOME/server.properties
+        echo "prevent-proxy-connections=${PREVENT_PROXY_CONNECTIONS:-true}" >> $MINECRAFT_HOME/server.properties
+        echo "function-permission-level=${FUNCTION_PERMISSION_LEVEL:-2}" >> $MINECRAFT_HOME/server.properties
+        echo "function-permission-level=${FUNCTION_PERMISSION_LEVEL:-2}" >> $MINECRAFT_HOME/server.properties
+        echo "max-world-size=${MAX_WORLD_SIZE:-29999984}" >> $MINECRAFT_HOME/server.properties
+        echo "network-compression-threshold=${NETWORK_COMPRESSION_THRESHOLD:-256}" >> $MINECRAFT_HOME/server.properties
+    fi
+
+}
+
+run_server() {
+    pushd $MINECRAFT_HOME > /dev/null
+    echo "Starting Minecraft"
+    echo "TERM: $TERM"
+    echo "MINECRAFT_OPTS: $MINECRAFT_OPTS"
+
+    MINECRAFT_CMD="gosu minecraft java $MINECRAFT_OPTS -jar $MINECRAFT_JAR --world-dir $WORLD_DIR"
+    PARAMS=$@
+
+    echo "Extra parameters: ${PARAMS[@]}"
+
+    if [ "$TERM" == "dumb" ]; then
+        >&2 echo "WARNING! Dumb term detected. Switching to noconsole mode."
+        >&2 echo "Safe shutdown must be done via /stop chat command."
+        MINECRAFT_CMD="$MINECRAFT_COMMAND --noconsole ${PARAMS[@]}"
+        exec ${MINECRAFT_CMD[@]}
+    else
+        MINECRAFT_CMD="$MINECRAFT_CMD ${PARAMS[@]}"
+        echo "MINECRAFT_CMD: $MINECRAFT_CMD"
+        tmux new -s $TMUX_SESSION "$MINECRAFT_CMD"
+    fi
+}
+
+console_command() {
+    COMMAND=$@
+    if [ "$TERM" == "dumb" ]; then
+        >&2 echo "Console command not supported on a dumb term."
+        exit 1
+    else
+        echo "Executing console command: ${COMMAND[@]}"
+        tmux send -t $TMUX_SESSION "${COMMAND[@]}" ENTER
+    fi
+}
+
+safe_shutdown() {
+    echo "Performing safe shutdown..."
+    console_command stop
+}
+
+case $1 in
+     run)
+         shift 1
+         download_papermc
+         update_permissions
+         trap safe_shutdown EXIT
+         run_server $@
+         ;;
+     permissions)
+         shift 1
+         update_permissions
+         ;;
+     console)
+         shift 1
+         console_command $@
+         ;;
+     *)
+         exec "$@"
+esac
