@@ -3,11 +3,11 @@
 MAX_HEAP_SIZE=${MAX_HEAP_SIZE:-"-Xmx1G"}
 MIN_HEAP_SIZE=${MIN_HEAP_SIZE:-"$MAX_HEAP_SIZE"}
 
-MINECRAFT_HOME="/opt/minecraft"
-MINECRAFT_VERSION=${MINERAFT_VERSION:-1.15}
-MINECRAFT_JAR="paper.jar"
+MINECRAFT_HOME=${MINECRAFT_HOME:-"/opt/minecraft"}
+MINECRAFT_VERSION=${MINERAFT_VERSION:-1.15.1}
+MINECRAFT_JAR=${MINECRAFT_JAR:-"paper.jar"}
 MINECRAFT_OPTS=${MINECRAFT_OPTS:-"$MIN_HEAP_SIZE $MAX_HEAP_SIZE -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:MaxGCPauseMillis=100 -XX:+DisableExplicitGC -XX:TargetSurvivorRatio=90 -XX:G1NewSizePercent=50 -XX:G1MaxNewSizePercent=80 -XX:G1MixedGCLiveThresholdPercent=35 -XX:+AlwaysPreTouch -XX:+ParallelRefProcEnabled -Dusing.aikars.flags=mcflags.emc.gs"}
-WORLD_DIR="/var/lib/minecraft"
+WORLD_DIR=${WORLD_DIR:-"/var/lib/minecraft"}
 
 PAPER_DOWNLOAD_URL=${PAPER_DOWNLOAD_URL:-"https://papermc.io/api/v1/paper/$MINECRAFT_VERSION/latest/download"}
 TMUX_SESSION=minecraft
