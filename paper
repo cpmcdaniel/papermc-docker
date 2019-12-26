@@ -31,7 +31,7 @@ download_papermc() {
             curl -S $PAPER_DOWNLOAD_URL -o $MINECRAFT_HOME/$MINECRAFT_JAR 
 
         if [ $? -ne 0 ]; then
-            >&2 echo "Unable to build Spigot."
+            >&2 echo "Unable to build server."
             exit 1
         fi
 

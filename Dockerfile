@@ -4,8 +4,7 @@ LABEL maintainer="cpmcdaniel@gmail.com"
 
 COPY paper /usr/local/bin
 
-ENV MINECRAFT_HOME /opt/minecraft
-ENV WORLD_DIR /var/lib/minecraft
+ARG MINECRAFT_HOME="/opt/minecraft"
 
 RUN apk update && apk upgrade && \
     apk add curl git tmux bash && \
@@ -13,12 +12,12 @@ RUN apk update && apk upgrade && \
     
 RUN addgroup -g 1000 minecraft && \
     adduser -G minecraft -u 1000 -S minecraft && \
-    mkdir -p $WORLD_DIR $MINECRAFT_DIR && \
-    chown minecraft:minecraft $WORLD_DIR $MINECRAFT_DIR && \
+    mkdir -p $MINECRAFT_HOME /var/lib/minecraft && \
+    chown minecraft:minecraft $MINECRAFT_HOME /var/lib/minecraft && \
     echo "set -g status off" > /root/.tmux.conf && \
     chmod 755 /usr/local/bin/paper
 
-VOLUME [$WORLD_DIR, $MINECRAFT_DIR]
+VOLUME ["${MINECRAFT_HOME}",  "/var/lib/minecraft"]
 
 EXPOSE 25565
 
