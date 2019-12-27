@@ -98,7 +98,7 @@ run_server() {
     if [ "$TERM" == "dumb" ]; then
         >&2 echo "WARNING! Dumb term detected. Switching to noconsole mode."
         >&2 echo "Safe shutdown must be done via /stop chat command."
-        MINECRAFT_CMD="$MINECRAFT_COMMAND --noconsole ${PARAMS[@]}"
+        MINECRAFT_CMD="$MINECRAFT_CMD --noconsole ${PARAMS[@]}"
         exec ${MINECRAFT_CMD[@]}
     else
         MINECRAFT_CMD="$MINECRAFT_CMD ${PARAMS[@]}"
