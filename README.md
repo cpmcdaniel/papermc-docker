@@ -106,6 +106,7 @@ The initial values for entries in the Paper [server.properties](https://www.spig
 * LEVEL_SEED
 * DIFFICULTY
 * GAMEMODE
+* HARDCORE
 * PLAYER_IDLE_TIMEOUT
 * MAX_PLAYERS
 * VIEW_DISTANCE
