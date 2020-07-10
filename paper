@@ -4,7 +4,7 @@ MAX_HEAP_SIZE=${MAX_HEAP_SIZE:-"-Xmx2G"}
 MIN_HEAP_SIZE=${MIN_HEAP_SIZE:-"$MAX_HEAP_SIZE"}
 
 MINECRAFT_HOME=${MINECRAFT_HOME:-"/opt/minecraft"}
-MINECRAFT_VERSION=${MINERAFT_VERSION:-1.15.2}
+MINECRAFT_VERSION=${MINECRAFT_VERSION:-1.15.2}
 MINECRAFT_JAR=${MINECRAFT_JAR:-"paper.jar"}
 MINECRAFT_OPTS=${MINECRAFT_OPTS:-"$MIN_HEAP_SIZE $MAX_HEAP_SIZE -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:MaxGCPauseMillis=100 -XX:+DisableExplicitGC -XX:TargetSurvivorRatio=90 -XX:G1NewSizePercent=50 -XX:G1MaxNewSizePercent=80 -XX:G1MixedGCLiveThresholdPercent=35 -XX:+AlwaysPreTouch -XX:+ParallelRefProcEnabled -Dusing.aikars.flags=mcflags.emc.gs"}
 WORLD_DIR=${WORLD_DIR:-"/var/lib/minecraft"}
